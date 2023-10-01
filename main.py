@@ -10,22 +10,19 @@ class Monitor:
         self.readers_count = 0
 
     def start_write(self):
-        with self.writer:
-            # Check if critical section is available (semaphore = 0)
-            self.writer.acquire()
+        # Check if critical section is available (semaphore = 0)
+        self.writer.acquire()
 
-            # Write the data
+        # Write the data
 
     def start_read(self):
-
-        while True:
-            # Allow to reader be allocated (semaphore = 0)
-            self.reader.acquire()
-            self.readers_count += 1
-            # writer can write
-            if self.readers_count == 1: self.writer.acquire()
-            self.reader.release()
-            # read
+        # Allow to reader be allocated (semaphore = 0)
+        self.reader.acquire()
+        self.readers_count += 1
+        # writer can write
+        if self.readers_count == 1: self.writer.acquire()
+        self.reader.release()
+        # read
 
     def end_read(self):
         # read
@@ -40,6 +37,19 @@ class Monitor:
 
         # up semaphore to 1
         self.writer.release()
+
+    def test_start_read(self):
+        self.writer.release()
+        self.reader.acquire()
+        self.readers_count += 1
+        if self.readers_count == 1: self.reader.release()
+        self.reader.release()
+
+    def test_end_read(self):
+        self.reader.acquire()
+        self.readers_count -= 1
+        if self.readers_count == 0: self.writer.acquire()
+        self.reader.release()
 
     # def read(self):
     #     self.start_read()
@@ -57,21 +67,24 @@ class Monitor:
     #         # writer cannot write
     #         if readers_count == 0: down(semaphore)
     #         up(mutex)
-    #
+
 
 recurso_compartilhado = []
 leitores_escritores = Monitor()
 
+
 def leitor(id):
-    leitores_escritores.start_read()
+    leitores_escritores.test_start_read()
     print(f"Leitor {id} lendo o recurso: {recurso_compartilhado}")
-    leitores_escritores.end_read()
+    leitores_escritores.test_end_read()
+
 
 def escritor(id):
     leitores_escritores.start_write()
     print(f"Escritor {id} escrevendo no recurso")
     recurso_compartilhado.append(f"Dados escritos pelo escritor {id}")
     leitores_escritores.end_write()
+
 
 threads = []
 
